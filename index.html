@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CIT Cyber Security — Course Advisor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="header-inner">
+        <div class="logo-area">
+          <span class="logo-icon">🎓</span>
+          <div>
+            <div class="institution">Computing &amp; Information Technology</div>
+            <div class="tool-title">Cyber Security Course Advisor</div>
+          </div>
+        </div>
+        <button id="restart-btn" class="restart-btn" style="display:none" onclick="restart()">↺ Start Over</button>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Step content injected here -->
+    </main>
+
+    <footer>
+      <p>Need help? Contact your academic advisor.</p>
+    </footer>
+  </div>
+
+  <script src="data.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>
