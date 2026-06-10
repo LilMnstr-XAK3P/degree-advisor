@@ -513,12 +513,38 @@ function renderChecklistResult() {
         <ul class="course-list">${transferRows}</ul>`;
     }
 
-    // Check for unavailable courses still needed
-    const unavailable = md.core.filter(c =>
-      (c.status === "deactivated" || c.status === "onhold") && !state.completed.has(c.num)
+    // ── Deactivated/on-hold/last-offered course analysis ──
+    const problemCourses = md.core.filter(c =>
+      c.status === "deactivated" || c.status === "onhold" || c.status === "lastoffered"
     );
-    if (unavailable.length) {
-      const unavailRows = unavailable.map(c => `
+    const stillNeeded   = problemCourses.filter(c => !state.completed.has(c.num));
+    const alreadyDone   = problemCourses.filter(c =>  state.completed.has(c.num));
+
+    // Shared CHFI sequence box — used in both Scenario A and B
+    const chfiBox = `
+      <div class="subst-box">
+        <div class="subst-title">📋 CHFI Certification Prep Sequence</div>
+        <p class="subst-seq-note">
+          ⚠️ <strong>Strict sequential order required.</strong>
+          100-level courses must be completed before 200-level courses.
+          You cannot enroll in CSEC 220 or 221 until CSEC 120 and 121 are completed.
+        </p>
+        <ul class="subst-list chfi-seq">
+          <li><span class="seq-step">1</span><span class="course-num">CSEC 120</span> CHFI 1: Digital Content Forensics</li>
+          <li><span class="seq-step">2</span><span class="course-num">CSEC 121</span> CHFI 2: Internet &amp; Network Forensics</li>
+          <li class="seq-divider">↓ complete both above before enrolling in either below ↓</li>
+          <li><span class="seq-step">3</span><span class="course-num">CSEC 220</span> CHFI 3: Operating Systems Forensics</li>
+          <li><span class="seq-step">4</span><span class="course-num">CSEC 221</span> CHFI 4: Social Media, Mobile &amp; Cloud Forensics</li>
+        </ul>
+        <p class="subst-note">
+          💡 <strong>These same courses are required core in the 2026–27 map.</strong>
+          Switching to the current map may be the cleaner path — use the comparison button below to see how your completed courses would apply.
+        </p>
+      </div>`;
+
+    if (stillNeeded.length > 0 && alreadyDone.length === 0) {
+      // ── Scenario A: none of the problem courses completed ──
+      const stillRows = stillNeeded.map(c => `
         <li class="s-todo">
           <span class="course-num">${c.num}</span>
           <span>
@@ -527,9 +553,85 @@ function renderChecklistResult() {
           </span>
         </li>`).join("");
       transferBlock += `
-        <div class="res-section-head warn-head">⚠️ Required Courses No Longer Available</div>
-        <p class="res-section-note">You still need these courses to graduate under the 2025–26 map, but they are deactivated or on hold. Contact your advisor immediately about substitution petitions or switching to the current map.</p>
-        <ul class="course-list">${unavailRows}</ul>`;
+        <div class="res-section-head warn-head">⚠️ Unavailable Courses — Substitute Path Available</div>
+        <p class="res-section-note">
+          None of the discontinued courses below have been completed yet.
+          <strong>Your best path forward is the CHFI certification prep sequence</strong>
+          (CSEC 120 → 121 → 220 → 221), which substitutes for these requirements
+          and also earns you the CHFI certification preparation. Standard per-credit tuition applies.
+        </p>
+        <ul class="course-list">${stillRows}</ul>
+        ${chfiBox}`;
+
+    } else if (stillNeeded.length > 0 && alreadyDone.length > 0) {
+      // ── Scenario B: some completed, some still needed ──
+      const stillRows = stillNeeded.map(c => `
+        <li class="s-todo">
+          <span class="course-num">${c.num}</span>
+          <span>
+            <span class="course-name">${c.name}</span>
+            <span class="course-note">⚠️ ${c.note}</span>
+          </span>
+        </li>`).join("");
+      const doneRows = alreadyDone.map(c => `
+        <li class="s-done">
+          <span class="course-num">${c.num}</span>
+          <span class="course-name">${c.name}
+            <span class="course-note">— completed ✅ counts as elective credit toward your degree</span>
+          </span>
+        </li>`).join("");
+      transferBlock += `
+        <div class="res-section-head warn-head">⚠️ Unavailable Courses — Two Options Available</div>
+        <p class="res-section-note">
+          You have completed some of the discontinued courses. Those already completed will count
+          as <strong>elective credits toward your degree</strong> regardless of which path you choose.
+          For the remaining courses you still need, you have two options:
+        </p>
+
+        <div class="option-cards">
+          <div class="option-card option-a">
+            <div class="option-label">Option A — CHFI Certification Sequence</div>
+            <p>Enroll in all four CHFI courses (CSEC 120, 121, 220, 221) in sequential order.
+            These substitute for your remaining requirements <em>and</em> prepare you for the
+            CHFI certification. Standard per-credit tuition applies for all four courses.</p>
+            ${chfiBox}
+          </div>
+          <div class="option-card option-b">
+            <div class="option-label">Option B — Individual Substitution</div>
+            <p>Work individually with <strong>Professor Morningstar</strong> to select approved
+            CIT, CSEC, or CSCO substitute courses matched to your specific situation.
+            Bring your transcript and this course plan to the meeting.</p>
+            <div class="morningstar-box" style="margin-top:10px;">
+              <div class="morningstar-title">👤 Contact Professor Morningstar</div>
+              <p>Schedule a meeting and bring your transcript. The professor will approve
+              suitable CIT / CSEC / CSCO substitutes for the courses you still need.</p>
+            </div>
+          </div>
+        </div>
+
+        <p style="font-size:.85rem;font-weight:600;margin:16px 0 6px;">Still needed (no longer available):</p>
+        <ul class="course-list">${stillRows}</ul>
+        <p style="font-size:.85rem;font-weight:600;margin:14px 0 6px;">Already completed — count as elective credits:</p>
+        <ul class="course-list">${doneRows}</ul>`;
+
+    } else if (stillNeeded.length === 0 && alreadyDone.length > 0) {
+      // ── Scenario C: all problem courses already completed ──
+      const doneRows = alreadyDone.map(c => `
+        <li class="s-done">
+          <span class="course-num">${c.num}</span>
+          <span class="course-name">${c.name}
+            <span class="course-note">— completed ✅ counts as elective credit toward your degree</span>
+          </span>
+        </li>`).join("");
+      transferBlock += `
+        <div class="res-section-head transfer-head">Previously Required Courses — All Completed ✅</div>
+        <p class="res-section-note">
+          You completed all of these courses while they were still available.
+          They count as elective credits toward your degree.
+          You may also optionally enroll in the CHFI sequence (CSEC 120 → 121 → 220 → 221)
+          for the certification — but it is not required for graduation.
+        </p>
+        <ul class="course-list">${doneRows}</ul>`;
     }
   }
 
